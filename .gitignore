@@ -3,6 +3,7 @@
 
 # hw-1 assets
 hw-1/assets
+*.wav
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

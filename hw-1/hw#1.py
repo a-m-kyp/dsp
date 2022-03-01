@@ -254,18 +254,24 @@ def check_input(args):
         else:
             file_type = "number"
 
-        if re.match(r'^[0-9]+$', args["number"]):
-            return process_number(args["number"])
-        elif re.match(r'^[۰-۹]+$', args["number"]):
-            return process_number(normalize_number(args["number"]))
+        if re.match(r'^[0-9]+$', number_value):
+            return process_number(number_value)
+        elif re.match(r'^[۰-۹]+$', number_value):
+            return process_number(normalize_number(number_value))
         else:
             print("\033[1;31m" +
                   "Error: You can't enter this number" + "\033[0m")
             sys.exit()
-    elif args["persian_sentence"]:
-        file_type = "word"
-        arguments = "persian_sentence"
-        return process_persian_sentence(normalize_persian_sentence(args["persian_sentence"]))
+
+    elif args["persian_sentence"] or args["persian_sentence_phoneme"]:
+        arguments = args["persian_sentence"] or args["persian_sentence_phoneme"]
+        sentence_value = args["persian_sentence"] or args["persian_sentence_phoneme"]
+        if args["persian_sentence_phoneme"]:
+            phoneme = True
+            file_type = "phoneme"
+        else:
+            file_type = "word"
+        return process_persian_sentence(normalize_persian_sentence(sentence_value))
 
     elif args["persian_sentence_phoneme"]:
         file_type = "phoneme"

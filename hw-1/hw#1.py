@@ -11,6 +11,8 @@ sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf8', buffering=1)
 valid_words = ["و", "صفر", "یک", "دو", "سه", "چهار", "پنج", "شش", "هفت", "هشت", "نه", "ده", "یازده", "دوازده", "سیزده", "چهارده", "پانزده", "شانزده", "هفده", "هجده",
                "نوزده", "بیست", "سی", "چهل", "پنجاه", "شصت", "هفتاد", "هشتاد", "نود", "صد", "دویست", "سیصد", "چهارصد", "پانصد", "ششصد", "هفتصد", "هشتصد", "نهصد", "هزار", "میلیون"]
 
+phoneme = False
+
 audio = {"yekan": {'0': "صفر",
                    '1': "یک",
                    '2': "دو",
@@ -223,16 +225,34 @@ def normalize_persian_sentence(sentence):
     return words
 
 def check_input(args):
-    global file_type, arguments
-    if args["persian_number"] and args["number"] and args["persian_sentence"]:
+
+    global file_type, arguments, phoneme
+
+    if args["number"] and args["persian_number"] and args["persian_sentence"] and args["persian_number_phoneme"] and args["persian_sentence_phoneme"]:
         print("\033[1;31m" + "Error: You must enter only one option" + "\033[0m")
         sys.exit()
-    elif args["persian_number"]:
-        file_type = "number"
-        arguments = "persian_number"
-        return process_sentence(normalize_persian_number(rtl_convert(args["persian_number"])))
-    elif args["number"]:
-        file_type = "number"
+
+    elif args["persian_number"] or args["persian_number_phoneme"]:
+        arguments = args["persian_number"] or args["persian_number_phoneme"]
+        persian_number_value = args["persian_number"] or args["persian_number_phoneme"]
+
+        if args["persian_number_phoneme"]:
+            phoneme = True
+            file_type = "phoneme"
+        else:
+            file_type = "number"
+
+        return process_sentence(normalize_persian_number(rtl_convert(persian_number_value)))
+
+    elif args["number"] or args["number_phoneme"]:
+        arguments = args["number"] or args["number_phoneme"]
+        number_value = args["number"] or args["number_phoneme"]
+
+        if args["number_phoneme"]:
+            phoneme = True
+            file_type = "phoneme"
+        else:
+            file_type = "number"
         arguments = "number"
 
         if re.match(r'^[0-9]+$', args["number"]):
@@ -252,6 +272,7 @@ def check_input(args):
         file_type = "phoneme"
         arguments = "persian_sentence_phoneme"
         return process_persian_sentence_phoneme(normalize_persian_sentence(args["persian_sentence_phoneme"]))
+
     else:
         print(
             "\033[1;31m" + "Error: You must enter either --persian_sentence or --number or --persian_number" + "\033[0m")
@@ -281,6 +302,8 @@ def process_sentence(sentence):
             result.append(temp_element)
         else:
             result.append(element)
+    if phoneme:
+        return process_persian_sentence_phoneme(apply_to_phoneme(result))
     return generate_order(result[::-1])
 
 def convert_to_3_digits(number):
@@ -352,20 +375,21 @@ def process_order(chunk):
     return sound_name
 
 def generate_order(result_list):
-    temp_dict = {}
-    print(result_list)
-    for key, value in file_name.items():
-        temp_dict[key] = rtl_convert(value)
-        # pass
+    print("====================== generate_oder =======================")
+
+    if not phoneme:
+        temp_dict = {}
+        for key, value in file_name.items():
+            temp_dict[key] = rtl_convert(value)
+        print(temp_dict)
+
     order = []
     print(result_list)
-    print(temp_dict)
     for audio in result_list:
         print("\033[1;32m" + audio + "\033[0m")
-        if audio == '[cls]':
-            audio = 'cls'
-            
-        if audio == 'ا':
+        if audio == '[cls]' or audio == 'cls':
+            order.append("O.wav")
+        elif audio == 'ا':
             order.append("a.wav")
         elif audio == 'اِ':
             order.append("e.wav")
@@ -382,6 +406,11 @@ def generate_order(result_list):
         elif audio in ['ه', 'ح']:
             order.append("h.wav")
         else:
+            if phoneme:
+                keys = [key for key, value in file_name.items() if value == audio]
+                print("\033[1;32m keys:  \033[0m", keys)
+                order.append(keys[0]+".wav")
+            else:
             keys = [key for key, value in temp_dict.items() if value == audio]
             print("\033[1;32m keys:  \033[0m", keys)
             order.append(keys[0]+".wav")
@@ -452,8 +481,21 @@ def process_number(number):
         semi_result = []
     result = intersperse(result, ['cls'])
     result =  [rtl_convert(item) for element in result for item in element]
-    print(number)
+    if phoneme:
+        return process_persian_sentence_phoneme(apply_to_phoneme(result))
     return generate_order(result)
+
+def apply_to_phoneme(result_list):
+        temp_result = []
+        for element in result_list:
+            print(element)
+            if element == 'cls' or element == "[cls]":
+                temp_result.append('cls')
+            elif element == 'silence':
+                temp_result.append('silence')
+            else:
+                temp_result.append(list(element)[::-1])
+        return temp_result
 
 # word
 def process_persian_sentence(sentence):
@@ -464,6 +506,8 @@ def process_persian_sentence(sentence):
             else:
                 temp_sentence.append('e')
                 temp_sentence.append('silence')
+    if phoneme:
+        return process_persian_sentence_phoneme(apply_to_phoneme(temp_sentence))
     return generate_order(temp_sentence)
 
 # phoneme
@@ -485,8 +529,14 @@ if __name__ == "__main__":
     for index, element in enumerate(result):
         print("index = ", index, "element = ", element)
 
-    result = [ 'assets/%s/' %(file_type) + element for element in result]
-    output_name =  '_'.join(args[arguments].split(' ')) + '.wav'
+    if phoneme:
+        print(arguments)
+        result = [ 'assets/%s/' %(file_type) + element for element in result]
+        output_name =  '_'.join(arguments.split(' ')) + '_phoneme' + '.wav'
+    else:
+        result = [ 'assets/%s/' %(file_type) + element for element in result]
+        output_name =  '_'.join(arguments.split(' ')) + '.wav'
+
     print(file_type)
     command = 'sox %s %s' % (' '.join(result), output_name)
     os.system(command)

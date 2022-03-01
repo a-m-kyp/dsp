@@ -514,9 +514,15 @@ def process_persian_sentence(sentence):
 def process_persian_sentence_phoneme(sentence):
     temp_sentence = []
     for word in sentence:
-        for char in word:
-            if char != '[' and char != ']':
-                if char != 'e':
+        if word == 'cls' or word == '[cls]' or word == ']slc[':
+            temp_sentence.append('cls')
+        elif word == 'silence':
+            temp_sentence.append('silence')
+        else:
+            print("word: ", word)
+            for char in word:
+                if char != '[' and char != ']':
+                    if char != 'e':
                     temp_sentence.append(char)
                 else:
                     temp_sentence.append('e')

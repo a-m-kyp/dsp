@@ -253,7 +253,6 @@ def check_input(args):
             file_type = "phoneme"
         else:
             file_type = "number"
-        arguments = "number"
 
         if re.match(r'^[0-9]+$', args["number"]):
             return process_number(args["number"])
@@ -411,9 +410,9 @@ def generate_order(result_list):
                 print("\033[1;32m keys:  \033[0m", keys)
                 order.append(keys[0]+".wav")
             else:
-            keys = [key for key, value in temp_dict.items() if value == audio]
-            print("\033[1;32m keys:  \033[0m", keys)
-            order.append(keys[0]+".wav")
+                keys = [key for key, value in temp_dict.items() if value == audio]
+                print("\033[1;32m keys:  \033[0m", keys)
+                order.append(keys[0]+".wav")
     return order
 
 def generate_audio_order(chunked, units):
@@ -523,10 +522,12 @@ def process_persian_sentence_phoneme(sentence):
             for char in word:
                 if char != '[' and char != ']':
                     if char != 'e':
-                    temp_sentence.append(char)
-                else:
-                    temp_sentence.append('e')
-                    temp_sentence.append('silence')
+                        temp_sentence.append(sub_alphabets(char))
+                    else:
+                        temp_sentence.append('e')
+                        temp_sentence.append('silence')
+    print("=========================== process_persian_sentence_phoneme ===========================")
+    print("temp_sentence", temp_sentence)
     return generate_order(temp_sentence)
 
 if __name__ == "__main__":

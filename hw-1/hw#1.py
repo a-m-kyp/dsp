@@ -5,6 +5,7 @@ import argparse
 import arabic_reshaper
 from bidi.algorithm import get_display
 from hazm import word_tokenize, POSTagger 
+from utils import sub_alphabets
 
 sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf8', buffering=1)
 valid_words = ["و", "صفر", "یک", "دو", "سه", "چهار", "پنج", "شش", "هفت", "هشت", "نه", "ده", "یازده", "دوازده", "سیزده", "چهارده", "پانزده", "شانزده", "هفده", "هجده",

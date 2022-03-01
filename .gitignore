@@ -1,3 +1,9 @@
+# vscode config
+.vscode
+
+# hw-1 assets
+hw-1/assets
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
